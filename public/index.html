@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Labs Experiment - Stanza</title>
+  <meta name="YAPP" content="Yet Another Podcast apP">
+  <link rel="icon" href="/images/favicon.ico" type="image/x-icon" />
+
+  <!-- CODELAB: Add link rel manifest -->
+  <link rel="manifest" href="/manifest.json">
+  <!-- CODELAB: Add iOS meta tags and icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Weather PWA">
+  <link rel="apple-touch-icon" href="/images/icons/icon-152x152.png">
+  <!-- CODELAB: Add description here -->
+  <meta name="description" content="Yet Another Podcast apP">
+  <!-- CODELAB: Add meta theme-color -->
+  <meta name="theme-color" content="#2F3BA2" />
+
+</head>
+
+<style>
+
+body {
+
+  background-color: black;
+  background-image: url('');
+  background-size: cover;
+	padding-top: 25px;
+  text-align: center;
+  width:700px;
+  margin: 0 auto;
+	font-family: 'Roboto';
+	color: white;
+
+}
+
+font-family: 'Roboto', sans-serif;
+
+</style>
+
+<body>
+
+  <div id="albumArt">
+    <img src="resources/images/splash.png">
+  </div>
+
+  <div id="songTitle">
+    TITLE
+  </div>
+
+  <div id="songArtist">
+    ARTIST
+  </div>
+
+  <div id="mediaControl">
+    <button type="button" onclick="seekBack()">Back</button>
+    <button type="button" onclick="playOrPause()">Play/Pause</button>
+    <button type="button" onclick="seekForward()">Forward</button>
+  </div>
+
+  <input type="range" min="0" max="10" value="10" class="slider" id="myProgress">
+
+  <input type="file" id="file_input" webkitdirectory="" directory="/input">
+
+  Podcast Search: <input type="text" name="podcastName" id="podcastName" value="Sleepycabin"><br>
+
+  <button type="button" onclick="podcastSearch(podcastName.value)">Search</button>
+
+</body>
+
+</html>
+
+<script>
+
+  var animeAesthetic = ('https://plaza.one/img/backs/' + ((Math.floor(Math.random() * 71))+10) + '.gif');
+  document.body.style.backgroundImage = 'url('+animeAesthetic+')';
+
+  var dataReceiver = function(callback){
+
+    console.log(callback.results);
+
+    console.log(callback.results[0].feedUrl);
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        readRSS(this.responseText);
+        console.log(this.responseText);
+      }
+    };
+    xmlhttp.open("GET", callback.results[0].feedUrl, true);
+    xmlhttp.send();
+
+  }
+
+  function podcastSearch(podcastName){
+
+    var podcast_search_script = document.createElement('script');
+    podcast_search_script.setAttribute('src','https://itunes.apple.com/search?term=' + podcastName + '&entity=podcast&callback=dataReceiver');
+    document.head.appendChild(podcast_search_script);
+
+  }
+
+  var isPaused = 1;
+
+  function playOrPause(){
+
+    if(isPaused == 1){
+      sound.play();
+
+      document.getElementById("myProgress").max = sound.duration();
+
+      isPaused = 0;
+
+    }else{
+
+      sound.pause();
+      isPaused = 1;
+
+    }
+
+  }
+
+  function seekBack(){
+
+    sound.seek((sound.seek()-5));
+
+  }
+
+  function seekForward(){
+
+    console.log(sound.seek);
+
+    sound.seek((sound.seek()+5));
+
+  }
+
+  function readRSS(feedURL){
+
+    try {
+      var url = new URL(feedURL)
+    }
+    catch (e) {
+      console.error('URL invalid');
+      return
+    }
+    fetch(url).then((res) => {
+      res.text().then((htmlTxt) => {
+        /* Extract the RSS Feed URL from the website */
+        try {
+          let doc = DOMPARSER(htmlTxt, 'text/html')
+          var feedUrl = doc.querySelector('link[type="application/rss+xml"]').href
+        } catch (e) {
+          console.error('Error in parsing the website');
+          return
+        }
+        /* Fetch the RSS Feed */
+        fetch(feedUrl).then((res) => {
+          res.text().then((xmlTxt) => {
+            /* Parse the RSS Feed and display the content */
+            try {
+              let doc = DOMPARSER(xmlTxt, "text/xml")
+              let heading = document.createElement('h1')
+              heading.textContent = url.hostname
+              frag.appendChild(heading)
+              doc.querySelectorAll('item').forEach((item) => {
+                let temp = document.importNode(document.querySelector('template').content, true);
+                let i = item.querySelector.bind(item)
+                let t = temp.querySelector.bind(temp)
+                t('h2').textContent = !!i('title') ? i('title').textContent : '-'
+                t('a').textContent = t('a').href = !!i('link') ? i('link').textContent : '#'
+                t('p').innerHTML = !!i('description') ? i('description').textContent : '-'
+                t('h3').textContent = url.hostname
+                frag.appendChild(temp)
+              })
+            } catch (e) {
+              console.error('Error in parsing the feed')
+            }
+            if(hasBegun) {
+              document.querySelector('output').textContent = '';
+              hasBegun = false;
+            }
+            document.querySelector('output').appendChild(frag)
+          })
+        }).catch(() => console.error('Error in fetching the RSS feed'))
+      })
+    }).catch(() => console.error('Error in fetching the website'))
+
+  }
+
+</script>
